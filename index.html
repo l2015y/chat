@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title>Chat</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        form {background: #000;  padding: 0px;border-style: solid; position: static; bottom: 0; width: 100%;}
+        form input { border: 0; padding: 10px; width: 90%; margin-right: .5%;text-align: center; }
+        form button { width: 9%; background: rgb(130, 224, 255); border: none; padding: 10px; }
+        #messages { list-style-type: none; margin: 0; padding: 0; }
+        #messages li { padding: 5px 10px; }
+        #messages li:nth-child(odd) { background: #eee; }
+        .btm_join {
+            width: 100%;
+            border-top: solid;
+            background: rgb(130, 224, 255);
+        }
+            .input_name{
+                width: 100%;
+            }
+        html*{
+            margin: 0;
+            padding: 0;
+            border: 0;
+            box-sizing: border-box
+        }
+
+        #conteiner {
+            background-color: #fff;
+            margin: 30px auto;
+            width: 1200px;
+            height: 1000px;
+        }
+        #menu {
+            float: left;
+            width: 200px;
+            height: 1000px;
+            background: #fff;
+        }
+
+        #content{
+            background: #fff;
+            width: 970px;
+            height:1000px;
+            float: right;
+        }
+
+    </style>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="frameworks.css">
+</head>
+<body>
+<div id="conteiner">
+<div id="menu">
+    <form id="nikname" action="">
+        <input type="text" class="input_name"  placeholder="Your name" id="name"/>
+        <button id="btm" class="btm_join" type= "submit">Join</button>
+    </form>
+    <ul id="people"></ul>
+    </div>
+    <div id="content">
+        <ul id="messages"></ul>
+        <form id="form" action="">
+            <input id="m" autocomplete="off" /><button>Send</button>
+        </form>
+    </div>
+    </div>
+<script>
+    var socket=io();
+    $('#nikname').submit(function(){
+        var nickname = $('#name').val();
+        $('#name').val('');
+        if(nickname!="" && nickname!=people[socket.id]) {
+            socket.emit('join', nickname);
+        }
+        return false;
+    });
+    $('#form').submit(function(){
+        socket.emit('chat message', $('#m').val());
+        $('#m').val('');
+        return false;
+    });
+    $('#m').keyup(function(e){
+        if(e.keyCode != 13) {
+            socket.emit('is typing', name);
+        }else{
+            return;
+        }
+    });
+
+
+    socket.on('join', function (people) {
+        $.each(people, function (socketid, name) {
+            $('#people').append("" + name+"");
+        });
+    });
+    socket.on('notice',function(msg){
+        $('#messages').append($('<li>').text(msg));
+    });
+    socket.on('typing',function(msg){
+        $('#messages').append($('<li>').text(msg));
+    });
+      socket.on('chat message', function (who,msg) {
+        $('#messages').append($('<li>').text(who + ' says: ' + msg));
+    });
+
+
+</script>
+</body>
+</html>
