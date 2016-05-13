@@ -17,21 +17,31 @@
             border-top: solid;
             background: rgb(130, 224, 255);
         }
-            .input_name{
-                width: 100%;
-            }
+
         html*{
             margin: 0;
             padding: 0;
             border: 0;
             box-sizing: border-box
         }
+        body {
+            background-color: #f0f1f3;
+            color:#667073;
+            font: 16px/1.3 'Arial',sans-serif;
+        }
 
         #conteiner {
             background-color: #fff;
-            margin: 30px auto;
+
             width: 1200px;
             height: 1000px;
+        }
+        .banner {
+            width: 1500px;
+            height: 38px;
+
+            background-color: #3c4446;
+            color: white;
         }
         #menu {
             float: left;
@@ -46,66 +56,130 @@
             height:1000px;
             float: right;
         }
+        #footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            padding-top: 10px;
+            background-color: #3c4446;
+            height: 60px;
+        }
+        #userList {
+            color: rgb(51, 183, 207);
+            right: 0;
+            top: 38px;
+            background: #4F5E61;
+            float: right;
+            overflow: auto;
+            width: 200px;
+            height: 100%;
+            position: fixed;
+        }
+        .text{
+            text-align: center;
+        }
+
+        .wisper{
+            color: grey;
+        }
 
     </style>
     <script src="/socket.io/socket.io.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
-    <link rel="stylesheet" type="text/css" href="frameworks.css">
 </head>
 <body>
 <div id="conteiner">
-<div id="menu">
-    <form id="nikname" action="">
-        <input type="text" class="input_name"  placeholder="Your name" id="name"/>
-        <button id="btm" class="btm_join" type= "submit">Join</button>
-    </form>
-    <ul id="people"></ul>
+    <div class="banner">
+        <i class="text">Welcom to my chat</i>
+    </div>
+    <div id="menu">
+        <p><i>For wisper You mast write /w user name message</i></p>
+    </div>
+    <div id="userList">
+        <ul id="people"></ul>
     </div>
     <div id="content">
         <ul id="messages"></ul>
+    </div>
+    <div id="footer">
         <form id="form" action="">
             <input id="m" autocomplete="off" /><button>Send</button>
         </form>
     </div>
     </div>
 <script>
-    var socket=io();
-    $('#nikname').submit(function(){
-        var nickname = $('#name').val();
-        $('#name').val('');
-        if(nickname!="" && nickname!=people[socket.id]) {
-            socket.emit('join', nickname);
-        }
-        return false;
+    $(function(){
+        var nickname = prompt('Write your nickname',name);
+        if (nickname == "") {
+            alert("Write your nickname");
+        } else {
+            socket.emit('join', nickname, function(data){
+                if(!data){
+                    alert('That username is already taken!  Try again.');
+                }else{
+                    return;
+                }
+            });
+            $('#people').val('');
+            }
     });
+
+    var socket=io();
+    var typing = false;
+    var timeout = undefined;
+
     $('#form').submit(function(){
-        socket.emit('chat message', $('#m').val());
+        socket.emit('chat message', $('#m').val(),function(data){
+            alert(data);
+        });
         $('#m').val('');
         return false;
     });
+
+    function timeoutFunction (){
+        typing=false;
+        socket.emit('is typing',false);
+    }
+
     $('#m').keyup(function(e){
         if(e.keyCode != 13) {
-            socket.emit('is typing', name);
-        }else{
-            return;
+          if(typing===false){
+          typing=true;
+              socket.emit('is typing',true);
+          }else{
+              clearTimeout(timeout);
+              timeout=setTimeout(timeoutFunction,3000)
+          }
         }
     });
 
+            socket.on('usernames', function (data) {
+                var html = '';
+                for (i = 0; i < data.length; i++) {
+                    html += data[i] + '<br/>'
+                }
+                $('#people').html(html);
+            });
+            socket.on('notice', function (msg) {
+                $('#messages').append($('<li>').text(msg));
+            });
+            socket.on('typing', function (msg) {
+               var str = $('#messages').append($('<li id ="typing">').text(msg));
+                setTimeout(clear,3000);
+                function clear (){
+                    $('#typing').remove();
+                }
+            });
+            socket.on('chat message', function (who, msg) {
+                $('#messages').append($('<li>').text(who + ' says: ' + msg));
+            });
+            socket.on('whisper', function (who, msg) {
+                $('#messages').append($('<li class="wisper">').text(who + ' says: ' + msg));
 
-    socket.on('join', function (people) {
-        $.each(people, function (socketid, name) {
-            $('#people').append("" + name+"");
-        });
-    });
-    socket.on('notice',function(msg){
-        $('#messages').append($('<li>').text(msg));
-    });
-    socket.on('typing',function(msg){
-        $('#messages').append($('<li>').text(msg));
-    });
-      socket.on('chat message', function (who,msg) {
-        $('#messages').append($('<li>').text(who + ' says: ' + msg));
-    });
+            });
+
+
 
 
 </script>
